@@ -14,7 +14,7 @@ import java.time.*
 
 @SpringBootTest(classes = [Application::class])
 @ImportAutoConfiguration(LiquibaseAutoConfiguration::class)
-class sequence {
+class SequenceTest {
 
 
     @BeforeEach

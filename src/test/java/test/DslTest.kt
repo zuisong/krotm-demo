@@ -18,7 +18,7 @@ import kotlin.random.*
 //@JdbcTest
 @SpringBootTest(classes = [Application::class])
 @ImportAutoConfiguration(LiquibaseAutoConfiguration::class)
-class dsl {
+class DslTest {
 
 
     @BeforeEach

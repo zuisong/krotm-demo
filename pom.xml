@@ -83,6 +83,11 @@
             <artifactId>p6spy</artifactId>
             <version>3.9.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -98,6 +103,11 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <compilerPlugins>
+                                <compilerPlugin>ksp</compilerPlugin>
+                            </compilerPlugins>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -110,7 +120,6 @@
                 <configuration>
                     <compilerPlugins>
                         <compilerPlugin>spring</compilerPlugin>
-                        <compilerPlugin>ksp</compilerPlugin>
                     </compilerPlugins>
                     <sourceDirs>
                         <sourceDir>src/main/kotlin</sourceDir>
@@ -135,6 +144,11 @@
                         <version>${zuisong-ktorm-ksp.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
             </plugin>
         </plugins>
     </build>

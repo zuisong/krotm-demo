@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.*
 //@JdbcTest
 @SpringBootTest(classes = [Application::class])
 @ImportAutoConfiguration(LiquibaseAutoConfiguration::class)
-class rawsql {
+class RawsqlTest {
 
 
     @BeforeEach
