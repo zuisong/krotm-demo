@@ -1,64 +1,14 @@
 package test
 
-import cn.mmooo.demo.*
 import cn.mmooo.demo.entity.*
 import org.junit.jupiter.api.*
-import org.ktorm.database.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.support.mysql.*
-import org.springframework.beans.factory.annotation.*
-import org.springframework.boot.autoconfigure.*
-import org.springframework.boot.autoconfigure.liquibase.*
-import org.springframework.boot.test.context.*
-import org.springframework.jdbc.core.namedparam.*
 import java.time.*
 import kotlin.random.*
 
-//@JdbcTest
-@SpringBootTest(classes = [Application::class])
-@ImportAutoConfiguration(LiquibaseAutoConfiguration::class)
-class DslTest {
-
-
-    @BeforeEach
-    fun initData() {
-        clearData()
-        database.useConnection {
-            it.prepareStatement(
-                """
-insert into t_department(id, name, location)
-                   values (1, 'Dept-1', 'Chicago'),
-                          (2, 'Dept-2', 'London');
-
-                   insert into t_employee
-                       (id, name, job, managerId, hire_date, salary, departmentId)
-                   values (1, 'Clark Mgr', 'ceo', null, '2020-01-01', 5000, 1),
-                          (2, 'Cameron Emp', 'manager', 1, '2020-01-01', 4000, 1),
-                          (3, 'Charlie Emp', 'manager', 1, '2020-01-01', 4000, 1),
-                          (4, 'Layton Emp', 'dev', 2, '2020-01-01', 3000, 2),
-                          (5, 'Linda Emp', 'dev', 2, '2020-01-01', 3000, 2);
-               
-               
-           """.trimIndent()
-            )
-                .execute()
-        }
-    }
-
-
-    fun clearData() {
-        database.deleteAll(Departments)
-        database.deleteAll(Employees)
-    }
-
-
-    @Autowired
-    lateinit var database: Database
-
-    @Autowired
-    lateinit var jdbcTemplate: NamedParameterJdbcTemplate
-
+class DslTest : BaseConfig() {
     @Test
     fun insert() {
 
@@ -129,26 +79,25 @@ insert into t_department(id, name, location)
 
     @Test
     fun query_dsl() {
-
-
         //language=sql
-
         val sql = """
 SELECT e.id AS e_id, e.name AS e_name, e.departmentId AS e_departmentId, d.id AS d_id
 FROM t_employee e
-         INNER JOIN t_department d
-WHERE 
-(((e.id IS NOT NULL) AND (e.name IS NOT NULL)) 
-AND ((d.name IS NOT NULL) AND (e.departmentId IS NOT NULL)))
-AND ((e.salary >= ?) AND (e.hire_date >= ?))
-  """
+         INNER JOIN t_department d ON e.departmentId = d.id
+WHERE (((e.id IS NOT NULL) 
+    AND (e.name IS NOT NULL)) 
+    AND ((d.name IS NOT NULL) 
+    AND (e.departmentId IS NOT NULL)))
+    AND ((e.salary >= ?) 
+    AND (e.hire_date < ?)) 
+"""
 
 
         //region code
         val e = Employees.aliased("e")
         val d = Departments.aliased("d")
         database.from(e)
-            .innerJoin(d)
+            .innerJoin(d, on = e.departmentId eq d.id )
             .select(e.id, e.name, e.departmentId, d.id)
             .whereWithConditions {
                 it.add(e.id.isNotNull())
