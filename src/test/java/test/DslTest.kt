@@ -4,6 +4,8 @@ import cn.mmooo.demo.entity.*
 import org.junit.jupiter.api.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import org.ktorm.expression.*
+import org.ktorm.schema.*
 import org.ktorm.support.mysql.*
 import java.time.*
 import kotlin.random.*
@@ -63,7 +65,7 @@ class DslTest : BaseConfig() {
             set(it.name, it.name.toUpperCase())
             set(it.job, "dev")
             where {
-                it.id eq emp.id!!
+                (it.id eq emp.id!!)
             }
         }
     }
@@ -97,7 +99,7 @@ WHERE (((e.id IS NOT NULL)
         val e = Employees.aliased("e")
         val d = Departments.aliased("d")
         database.from(e)
-            .innerJoin(d, on = e.departmentId eq d.id )
+            .innerJoin(d, on = e.departmentId eq d.id)
             .select(e.id, e.name, e.departmentId, d.id)
             .whereWithConditions {
                 it.add(e.id.isNotNull())
@@ -107,10 +109,11 @@ WHERE (((e.id IS NOT NULL)
                 it.add(e.salary greaterEq 0L)
                 it.add(e.hireDate less LocalDate.now())
             }
-            .iterator()
             .forEach {
-                println("e.id : " + it[e.id])
-                println("e.name : " + it[e.name])
+                val i = it[e.id]
+                println("e.id : " + i)
+                val s = it[e.name]
+                println("e.name : " + s)
                 println("e.departmentId : " + it[e.departmentId])
                 println("d.id : " + it[d.id])
                 println()
@@ -123,20 +126,18 @@ WHERE (((e.id IS NOT NULL)
     @Test
     fun query_seq() {
         //language=sql
-        val sql = """
-SELECT t_employee.id           AS t_employee_id,
+        val sql = """SELECT t_employee.id           AS t_employee_id,
        t_employee.name         AS t_employee_name,
        t_employee.job          AS t_employee_job,
        t_employee.managerId    AS t_employee_managerId,
-       t_employee.hire_date     AS t_employee_hire_date,
+       t_employee.hire_date    AS t_employee_hire_date,
        t_employee.salary       AS t_employee_salary,
        t_employee.departmentId AS t_employee_departmentId
 FROM t_employee
-WHERE ((t_employee.hire_date >= ?)
-    AND (t_employee.id >= ?))
+WHERE ((t_employee.hire_date >= '2022-07-13T00:00:00.000+0800') AND (t_employee.id >= 1))
   AND (t_employee.name IS NOT NULL)
-ORDER BY t_employee.id
-LIMIT ?, ?"""
+ORDER BY t_employee.id LIMIT 0, 10 
+"""
 
         //region code
         val employeeList =
@@ -168,7 +169,6 @@ HAVING avg >= ?
 ORDER BY avg 
  """.trimIndent()
 
-
         //region test.dsl
         val e = Employees.aliased("e")
         val d = Departments.aliased("d")
@@ -197,5 +197,61 @@ ORDER BY avg
         //endregion
     }
 
+    @Test
+    fun testSubquery() {
+
+        //language=sql
+        val sql = """
+            SELECT sub_t.hello AS sub_t_hello
+                FROM (
+                SELECT x.name AS hello FROM t_employee x WHERE 
+                x.salary BETWEEN 100 AND 200
+                     ) sub_t
+            WHERE sub_t.hello LIKE '%1%'             
+        """.trimIndent()
+
+
+        val e = Employees.aliased("e")
+
+
+        val sub = SubT.aliased("sub_query_t")
+        val x2 =
+            QuerySource(database,
+                sub,
+                database
+                    .from(e)
+                    // 这里要保证和 SubT 的列一样
+                    .select(e.name.aliased(SubT.name.name))
+                    .where { e.salary between 100L..200L }
+                    .expression
+                    .aliased(sub)
+            )
+                .select(sub.name)
+                .where(sub.name like "%1%")
+        val names2 = x2.map { it.getString(1) }
+        println(x2.sql)
+        println(names2)
+    }
+
+    fun QueryExpression.aliased(tempTable: BaseTable<*>): QueryExpression {
+        return when (this) {
+            is SelectExpression -> this.copy(tableAlias = tempTable.alias ?: tempTable.tableName)
+            is UnionExpression -> this.copy(tableAlias = tempTable.alias ?: tempTable.tableName)
+        }
+    }
+
+    /**
+     * 声明子查询返回的类型， 列名和类型都要一一对应
+     */
+    open class SubT(alias: String? = null) : BaseTable<Any>("sub_t", alias = alias) {
+        companion object : SubT()
+
+        override fun aliased(alias: String) = SubT(alias)
+
+        val name = varchar("hello")
+        override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Any {
+            return Unit
+        }
+    }
 
 }
