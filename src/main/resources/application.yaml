@@ -1,0 +1,9 @@
+spring.application.name: app-producer
+server.servlet.context-path: /${spring.application.name}
+spring:
+  liquibase:
+    change-log: classpath*:liquibase/db-changelog.xml
+    enabled: true
+  datasource:
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    url: jdbc:p6spy:h2:mem:test;MODE=mysql;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=TRUE;

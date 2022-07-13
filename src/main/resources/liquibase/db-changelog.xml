@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="111" author="chenjian">
+        <!-- @formatter:off -->
+        <sql>
+            create table t_department
+            (
+                id       int          not null primary key auto_increment,
+                name     varchar(128) not null,
+                location varchar(128)
+            );
+
+            create table t_employee
+            (
+                id            int          not null primary key auto_increment,
+                name          varchar(128) not null,
+                job           varchar(128) not null,
+                managerId    int null,
+                hire_date     date         not null,
+                salary        bigint       not null,
+                departmentId int          not null
+            );
+
+        </sql>
+        <!-- @formatter:on -->
+    </changeSet>
+
+</databaseChangeLog>
